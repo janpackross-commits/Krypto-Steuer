@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#03060f">
+<title>KryptoSteuer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:#03060f;color:#e0e0f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;flex-direction:column}
+:root{
+  --bg:#03060f;--s1:#0a1628;--s2:#0f1f3d;--border:#1a2d50;--border2:#243d6a;
+  --gold:#c9a84c;--gold2:#e8c97a;--green:#00d68f;--red:#ff8080;--warn:#f5a623;
+  --blue:#2979ff;--text:#e0e0f0;--text2:#dde8f8;--text3:#a0bcd8;
+  --mono:'Courier New',monospace;
+}
+
+/* LOCK */
+#lock{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;background-image:radial-gradient(ellipse at 50% 30%,rgba(41,121,255,0.1) 0%,transparent 70%)}
+#lock.hide{display:none}
+.lb{text-align:center;margin-bottom:48px}
+.lb h1{font-size:30px;font-weight:900;letter-spacing:-1px}
+.lb h1 span{color:var(--gold)}
+.lb p{font-size:9px;color:var(--text3);letter-spacing:3px;margin-top:4px}
+.lt{font-size:17px;font-weight:600;margin-bottom:8px;text-align:center}
+.lh{font-size:12px;color:var(--text2);margin-bottom:24px;text-align:center}
+#lock form{display:flex;flex-direction:column;align-items:center;width:100%;max-width:280px}
+#pin{width:100%;padding:16px;background:var(--s1);border:1px solid var(--border2);border-radius:12px;color:var(--text);font-size:28px;letter-spacing:12px;text-align:center;outline:none;font-family:var(--mono);-webkit-text-security:disc;margin-bottom:12px}
+#pin:focus{border-color:var(--gold)}
+#pin-submit{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px}
+#pin-reset{background:transparent;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;padding:8px}
+.lerr{color:var(--red);font-size:11px;margin-bottom:8px;min-height:14px;text-align:center}
+
+/* HEADER */
+.hdr{flex-shrink:0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(3,6,15,0.95)}
+.hdr-brand{font-size:20px;font-weight:900;letter-spacing:-0.5px}
+.hdr-brand span{color:var(--gold)}
+.hdr-r{text-align:right}
+.hdr-lots{font-family:var(--mono);font-size:10px;color:var(--gold)}
+.hdr-date{font-family:var(--mono);font-size:9px;color:var(--text3)}
+
+/* TABS */
+.tabs{display:flex;flex-shrink:0;background:#060d1a;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:1;min-width:60px;padding:10px 4px;text-align:center;font-size:9px;font-weight:700;letter-spacing:.8px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;text-transform:uppercase}
+.tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* PAGES */
+.pages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.page{display:none;padding:14px}
+.page.on{display:block}
+
+/* HERO */
+.hero{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:10px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,0.1) 0%,transparent 70%);pointer-events:none}
+.hero-lbl{font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.hero-val{font-size:36px;font-weight:900;letter-spacing:-1px;line-height:1;margin-bottom:10px}
+.pnl-chip{display:inline-block;padding:4px 12px;border-radius:20px;font-family:var(--mono);font-size:11px}
+.chip-pos{background:rgba(0,214,143,.12);color:var(--green);border:1px solid rgba(0,214,143,.25)}
+.chip-neg{background:rgba(255,61,90,.12);color:var(--red);border:1px solid rgba(255,61,90,.25)}
+.chip-neu{background:var(--s2);color:var(--text2);border:1px solid var(--border)}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+.stat{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:12px 10px}
+.stat label{font-family:var(--mono);font-size:10px;color:var(--text2);display:block;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase}
+.stat .v{font-size:17px;font-weight:800}
+.stat .s{font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px}
+.g{color:var(--green)}.r{color:var(--red)}.w{color:var(--warn)}.b{color:var(--blue)}.gold{color:var(--gold)}
+
+/* CARD */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+.card-hd{font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px}
+
+/* COIN */
+.coin-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.coin-row:last-child{border:none}
+.cr-l .cr-name{font-size:14px;font-weight:700}
+.cr-l .cr-info{font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:2px}
+.cr-r{text-align:right}
+.cr-r .cr-val{font-size:14px;font-weight:700;font-family:var(--mono)}
+.cr-r .cr-pnl{font-family:var(--mono);font-size:10px;margin-top:2px}
+
+/* PRICE */
+.price-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.price-row:last-of-type{border:none}
+.pr-coin{font-size:13px;font-weight:700;width:55px;flex-shrink:0}
+.pr-wrap{flex:1}
+.pr-wrap label{font-family:var(--mono);font-size:10px;color:var(--text2);display:block;margin-bottom:2px}
+.pr-inp{width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:13px;padding:3px 0;outline:none}
+.pr-inp:focus{border-bottom-color:var(--gold)}
+
+/* LOT */
+.lot{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:6px;border-left:3px solid var(--border)}
+.lot.free{border-left-color:var(--green)}
+.lot.soon{border-left-color:var(--warn)}
+.lot.taxed{border-left-color:var(--red)}
+.lot-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.lot-coin{font-size:14px;font-weight:700}
+.lot-src{font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:1px}
+.badge{font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:20px}
+.badge.free{background:rgba(0,214,143,.12);color:var(--green);border:1px solid rgba(0,214,143,.2)}
+.badge.soon{background:rgba(245,166,35,.12);color:var(--warn);border:1px solid rgba(245,166,35,.2)}
+.badge.taxed{background:rgba(255,61,90,.12);color:var(--red);border:1px solid rgba(255,61,90,.2)}
+.lot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.lot-f label{font-family:var(--mono);font-size:10px;color:var(--text2);display:block;margin-bottom:2px;text-transform:uppercase}
+.lot-f span{font-family:var(--mono);font-size:11px;font-weight:600}
+.prog{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px}
+.pf-free{background:var(--green)}
+.pf-soon{background:var(--warn)}
+.pf-taxed{background:var(--red)}
+.prog-lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px}
+
+/* FILTER */
+.filters{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.fp{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--border);background:var(--s1);color:var(--text2);cursor:pointer;white-space:nowrap;flex-shrink:0}
+.fp.on{border-color:var(--gold);color:var(--gold)}
+
+/* IMPORT */
+.drop{border:1.5px dashed var(--border2);border-radius:14px;padding:28px 16px;text-align:center;cursor:pointer;margin-bottom:12px;background:var(--s1)}
+.drop-icon{font-size:36px;margin-bottom:10px}
+.drop-title{font-size:15px;font-weight:700;margin-bottom:6px}
+.drop-sub{font-size:12px;color:var(--text2);line-height:1.6}
+.exch{display:flex;gap:8px;margin-bottom:12px}
+.ep{flex:1;padding:10px 8px;border-radius:10px;text-align:center;font-size:12px;font-weight:600;border:1px solid var(--border);background:var(--s1);color:var(--text2);cursor:pointer}
+.ep.on{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.08)}
+
+/* TIMELINE */
+.tl-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.tl-item:last-child{border:none}
+.tl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-g{background:var(--green);box-shadow:0 0 6px rgba(0,214,143,0.5)}
+.dot-w{background:var(--warn)}
+.dot-r{background:var(--red)}
+.tl-info{flex:1}
+.tl-name{font-size:13px;font-weight:600}
+.tl-date{font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:2px}
+.tl-amt{font-family:var(--mono);font-size:11px;text-align:right}
+
+/* BUTTONS */
+.btn{width:100%;padding:13px;border-radius:10px;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;margin-bottom:8px}
+.btn-out{background:transparent;color:var(--text2);border:1px solid var(--border)}
+
+/* ALERTS */
+.alert{border-radius:8px;padding:10px 12px;font-size:11px;margin-bottom:8px;line-height:1.5}
+.a-blue{background:rgba(41,121,255,.1);border:1px solid rgba(41,121,255,.25);color:#6fa8ff}
+.a-green{background:rgba(0,214,143,.1);border:1px solid rgba(0,214,143,.25);color:var(--green)}
+.a-warn{background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.25);color:var(--warn)}
+.a-red{background:rgba(255,61,90,.1);border:1px solid rgba(255,61,90,.25);color:var(--red)}
+
+/* EXPORT */
+.exp-pre{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:var(--mono);font-size:10px;color:var(--text3);overflow-x:auto;margin-bottom:10px;max-height:160px;overflow-y:auto;white-space:pre}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 20px;color:var(--text3)}
+.empty-icon{font-size:48px;margin-bottom:12px}
+.empty p{font-size:13px;line-height:1.8;color:var(--text2)}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2)}
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+
+<div id="lock">
+  <div class="lb">
+    <h1>Krypto<span>Steuer</span></h1>
+    <p>HALTEFRIST TRACKER · §23 EStG</p>
+  </div>
+  <div class="lt" id="lt">Willkommen zurück</div>
+  <div class="lh" id="lh">PIN eingeben zum Entsperren</div>
+  <form id="lock-form">
+    <input id="pin" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]*" placeholder="····" autocomplete="off">
+    <div class="lerr" id="lerr"></div>
+    <button type="submit" id="pin-submit">Entsperren</button>
+    <button type="button" id="pin-reset">PIN zurücksetzen</button>
+  </form>
+</div>
+
+<div class="hdr">
+  <div class="hdr-brand">Krypto<span>Steuer</span></div>
+  <div class="hdr-r">
+    <div class="hdr-lots" id="hdr-count">0 Lots</div>
+    <div class="hdr-date" id="hdr-date"></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab on" data-tab="dashboard">ÜBERBLICK</div>
+  <div class="tab" data-tab="lots">LOTS</div>
+  <div class="tab" data-tab="timeline">TIMELINE</div>
+  <div class="tab" data-tab="import">IMPORT</div>
+  <div class="tab" data-tab="export">EXPORT</div>
+</div>
+
+<div class="pages">
+  <div class="page on" id="page-dashboard">
+    <div id="dash-empty" class="empty">
+      <div class="empty-icon">📊</div>
+      <p>Noch keine Daten.<br>Gehe zu <strong>IMPORT</strong> und lade deine Bitpanda CSV hoch.</p>
+    </div>
+    <div id="dash-content" style="display:none">
+      <div class="hero">
+        <div class="hero-lbl">PORTFOLIO WERT</div>
+        <div class="hero-val" id="d-val">— €</div>
+        <div id="d-pnl-wrap"><span class="pnl-chip chip-neu" id="d-pnl">Kurse eingeben</span></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><label>INVESTIERT</label><div class="v b" id="d-inv">—</div></div>
+        <div class="stat"><label>STEUERFREI</label><div class="v g" id="d-free">—</div><div class="s" id="d-free-s">— Lots</div></div>
+        <div class="stat"><label>STEUERPFL.</label><div class="v r" id="d-tax">—</div><div class="s" id="d-soon-s">—</div></div>
+      </div>
+      <div id="d-alert" class="alert a-warn" style="display:none"></div>
+      <div class="card">
+        <div class="card-hd">AKTUELLE KURSE (EUR)</div>
+        <div id="price-status" class="alert a-blue" style="display:none;margin-bottom:10px"></div>
+        <div id="price-inputs"></div>
+        <button class="btn btn-gold" id="btn-live" style="margin-top:12px">⚡ Live Kurse laden</button>
+        <button class="btn btn-out" id="btn-manual">✏️ Manuell speichern</button>
+      </div>
+      <div class="card">
+        <div class="card-hd">PORTFOLIO</div>
+        <div id="coin-summary"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page-lots">
+    <div id="lots-empty" class="empty"><div class="empty-icon">📋</div><p>Keine Lots geladen.</p></div>
+    <div id="lots-content" style="display:none">
+      <div class="filters" id="coin-filter"></div>
+      <div id="lots-list"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-timeline">
+    <div id="tl-empty" class="empty"><div class="empty-icon">📅</div><p>Keine Daten.</p></div>
+    <div id="tl-content" style="display:none">
+      <div class="card"><div class="card-hd">NÄCHSTE STEUERFREIE LOTS</div><div id="tl-upcoming"></div></div>
+      <div class="card" style="margin-top:10px"><div class="card-hd">BEREITS STEUERFREI</div><div id="tl-free"></div></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-import">
+    <div class="alert a-blue">Bitpanda · Robinhood · Coinbase CSV Import</div>
+    <div class="exch">
+      <div class="ep on" data-ex="bitpanda">Bitpanda</div>
+      <div class="ep" data-ex="robinhood">Robinhood</div>
+      <div class="ep" data-ex="coinbase">Coinbase</div>
+    </div>
+    <div class="drop" id="drop-zone">
+      <div class="drop-icon">📂</div>
+      <div class="drop-title">CSV auswählen</div>
+      <div class="drop-sub" id="drop-sub">Antippen → Datei-Browser öffnet sich</div>
+    </div>
+    <input type="file" id="csv-file" accept=".csv,text/csv,text/plain">
+    <div id="imp-ok" class="alert a-green" style="display:none"></div>
+    <div id="imp-err" class="alert a-red" style="display:none"></div>
+    <button class="btn btn-out" id="btn-clear" style="margin-top:8px">🗑 Alle Daten löschen</button>
+    <div class="card" style="margin-top:10px">
+      <div class="card-hd">CSV EXPORT ANLEITUNG</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.8">
+        <strong style="color:var(--text)">Bitpanda:</strong> Mein Konto → Transaktionsverlauf → Export → CSV<br>
+        <strong style="color:var(--text)">Robinhood:</strong> Account → History → Export CSV<br>
+        <strong style="color:var(--text)">Coinbase:</strong> Profile → Statements → Generate Report
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page-export">
+    <div id="exp-empty" class="empty"><div class="empty-icon">📤</div><p>Erst CSV importieren.</p></div>
+    <div id="exp-content" style="display:none">
+      <div class="alert a-blue">Export für Steuerberater</div>
+      <div class="exp-pre" id="exp-pre"></div>
+      <button class="btn btn-gold" id="btn-dl">⬇ CSV Herunterladen</button>
+      <button class="btn btn-out" id="btn-copy">📋 Kopieren</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var lots = [];
+var prices = {};
+var exchange = 'bitpanda';
+var filterCoin = 'ALLE';
+var TODAY = new Date();
+TODAY.setHours(0,0,0,0);
+
+// ── UTILS ──
+function daysBetween(d1,d2){return Math.round((d2-d1)/86400000)}
+function fmt(n,dec){if(n===null||n===undefined||isNaN(n))return '—';dec=dec||2;return n.toLocaleString('de-DE',{minimumFractionDigits:dec,maximumFractionDigits:dec})}
+function fmtE(n){if(!n&&n!==0)return '—';return fmt(n)+' €'}
+function fmtC(n,coin){var dec=coin==='BTC'?8:4;return fmt(n,dec)+' '+coin}
+
+// ── STORAGE ──
+function save(){try{localStorage.setItem('kst_lots',JSON.stringify(lots));localStorage.setItem('kst_prices',JSON.stringify(prices))}catch(e){}}
+function load(){try{var l=localStorage.getItem('kst_lots');var p=localStorage.getItem('kst_prices');if(l)lots=JSON.parse(l);if(p)prices=JSON.parse(p)}catch(e){}}
+
+// ── LOCK ──
+var lockMode='unlock';
+var pinFirst='';
+function hashPin(pin){var h=0;for(var i=0;i<pin.length;i++){h=(Math.imul(31,h)+pin.charCodeAt(i))|0}return h.toString()}
+
+document.getElementById('lock-form').addEventListener('submit',function(e){
+  e.preventDefault();
+  var pin=document.getElementById('pin').value.trim();
+  var stored=localStorage.getItem('kst_pin');
+  var err=document.getElementById('lerr');
+  err.textContent='';
+  if(pin.length!==4){err.textContent='Bitte genau 4 Ziffern';return}
+  if(!stored){
+    if(lockMode==='unlock')lockMode='setup';
+    if(lockMode==='setup'){pinFirst=pin;lockMode='confirm';document.getElementById('lt').textContent='PIN bestätigen';document.getElementById('lh').textContent='PIN nochmal eingeben';document.getElementById('pin-submit').textContent='Bestätigen';document.getElementById('pin').value=''}
+    else if(lockMode==='confirm'){
+      if(pin===pinFirst){localStorage.setItem('kst_pin',hashPin(pin));doUnlock()}
+      else{err.textContent='PINs stimmen nicht überein';lockMode='setup';pinFirst='';document.getElementById('pin').value='';document.getElementById('lt').textContent='PIN festlegen';document.getElementById('pin-submit').textContent='PIN festlegen'}
+    }
+  } else {
+    if(hashPin(pin)===stored)doUnlock();
+    else{err.textContent='Falsche PIN';document.getElementById('pin').value=''}
+  }
+});
+
+document.getElementById('pin-reset').addEventListener('click',function(){
+  if(confirm('PIN wirklich zurücksetzen?')){localStorage.removeItem('kst_pin');location.reload()}
+});
+
+function doUnlock(){
+  document.getElementById('lock').classList.add('hide');
+  load();updateHeader();
+  document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('de-DE');
+  if(lots.length>0)renderDashboard();
+}
+
+function initLock(){
+  var stored=localStorage.getItem('kst_pin');
+  if(!stored){lockMode='setup';document.getElementById('lt').textContent='PIN festlegen';document.getElementById('lh').textContent='Wähle eine 4-stellige PIN';document.getElementById('pin-submit').textContent='PIN festlegen'}
+}
+
+// ── TABS ──
+document.querySelectorAll('.tab').forEach(function(tab){
+  tab.addEventListener('click',function(){
+    var id=this.dataset.tab;
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on')});
+    this.classList.add('on');
+    document.querySelectorAll('.page').forEach(function(p){p.classList.remove('on')});
+    document.getElementById('page-'+id).classList.add('on');
+    if(id==='dashboard')renderDashboard();
+    if(id==='lots')renderLots();
+    if(id==='timeline')renderTimeline();
+    if(id==='export')renderExport();
+  });
+});
+
+// ── EXCHANGE ──
+document.querySelectorAll('.ep').forEach(function(ep){
+  ep.addEventListener('click',function(){
+    document.querySelectorAll('.ep').forEach(function(e){e.classList.remove('on')});
+    this.classList.add('on');
+    exchange=this.dataset.ex;
+    var subs={bitpanda:'Bitpanda → Verlauf → Export → CSV',robinhood:'Robinhood → Account → History → Export CSV',coinbase:'Coinbase → Profile → Statements → Report'};
+    document.getElementById('drop-sub').textContent=subs[exchange];
+  });
+});
+
+// ── FILE IMPORT ──
+document.getElementById('drop-zone').addEventListener('click',function(){document.getElementById('csv-file').click()});
+document.getElementById('csv-file').addEventListener('change',function(){if(this.files[0])parseFile(this.files[0])});
+
+function parseFile(file){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var newLots=[];
+      if(exchange==='bitpanda')newLots=parseBitpanda(e.target.result);
+      else if(exchange==='robinhood')newLots=parseRobinhood(e.target.result);
+      else newLots=parseCoinbase(e.target.result);
+      if(newLots.length===0){showErr('Keine Kauftransaktionen gefunden');return}
+      var existIds=new Set(lots.map(function(l){return l.id}));
+      var added=newLots.filter(function(l){return !existIds.has(l.id)});
+      lots=lots.concat(added);
+      lots.sort(function(a,b){return a.date-b.date});
+      var coins=[...new Set(lots.map(function(l){return l.coin}))];
+      coins.forEach(function(c){if(!prices[c])prices[c]=null});
+      save();
+      document.getElementById('imp-ok').textContent='✅ '+added.length+' neue Lots importiert. Gesamt: '+lots.length+' Lots.';
+      document.getElementById('imp-ok').style.display='block';
+      document.getElementById('imp-err').style.display='none';
+      updateHeader();
+    }catch(err){showErr('Fehler: '+err.message)}
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+function showErr(msg){document.getElementById('imp-err').textContent='❌ '+msg;document.getElementById('imp-err').style.display='block';document.getElementById('imp-ok').style.display='none'}
+
+function parseCSVLine(line){var r=[],c='',q=false;for(var i=0;i<line.length;i++){var ch=line[i];if(ch==='"'){q=!q}else if(ch===','&&!q){r.push(c);c=''}else{c+=ch}}r.push(c);return r}
+
+function parseBitpanda(text){
+  var lines=text.split('\n');
+  var hi=-1;
+  for(var i=0;i<lines.length;i++){if(lines[i].includes('Transaction ID')){hi=i;break}}
+  if(hi===-1)throw new Error('Header nicht gefunden');
+  var headers=parseCSVLine(lines[hi]);
+  var idx={};
+  headers.forEach(function(h,i){idx[h.replace(/"/g,'').trim()]=i});
+  // Track bought and sold amounts per coin
+  var boughtAmounts={};
+  var soldAmounts={};
+  for(var i=hi+1;i<lines.length;i++){
+    var lineS=lines[i].trim();if(!lineS)continue;
+    var cS=parseCSVLine(lineS);
+    var typeS=(cS[idx['Transaction Type']]||'').replace(/"/g,'').trim().toLowerCase();
+    var assetS=(cS[idx['Asset']]||'').replace(/"/g,'').trim();
+    var amtS=parseFloat((cS[idx['Amount Asset']]||'0').replace(/"/g,'').trim())||0;
+    if(!assetS||assetS==='EUR'||assetS==='USD'||amtS<=0)continue;
+    if(typeS==='buy')boughtAmounts[assetS]=(boughtAmounts[assetS]||0)+amtS;
+    if(typeS==='sell'||typeS==='withdrawal')soldAmounts[assetS]=(soldAmounts[assetS]||0)+amtS;
+  }
+  // Coins where sold >= 95% of bought = fully sold, hide all lots
+  var fullySold={};
+  Object.keys(boughtAmounts).forEach(function(k){
+    var sold=soldAmounts[k]||0;
+    if(sold>=boughtAmounts[k]*0.95)fullySold[k]=true;
+  });
+  var out=[];
+  for(var i=hi+1;i<lines.length;i++){
+    var line=lines[i].trim();if(!line)continue;
+    var c=parseCSVLine(line);
+    var type=(c[idx['Transaction Type']]||'').replace(/"/g,'').trim().toLowerCase();
+    if(type!=='buy')continue;
+    var id=(c[idx['Transaction ID']]||'').replace(/"/g,'').trim();
+    var ts=(c[idx['Timestamp']]||'').replace(/"/g,'').trim();
+    var fiat=parseFloat((c[idx['Amount Fiat']]||'0').replace(/"/g,'').trim())||0;
+    var fiatCur=(c[idx['Fiat']]||'EUR').replace(/"/g,'').trim();
+    var amt=parseFloat((c[idx['Amount Asset']]||'0').replace(/"/g,'').trim())||0;
+    var asset=(c[idx['Asset']]||'').replace(/"/g,'').trim();
+    if(!asset||asset==='EUR'||asset==='USD'||amt<=0)continue;
+    var date=new Date(ts);
+    if(isNaN(date.getTime()))continue;
+    var costEur=fiatCur==='USD'?fiat/1.08:fiat;
+    // Skip lots for fully sold coins
+    if(!fullySold[asset]){
+      out.push({id:id,date:date,coin:asset,amount:amt,costEur:costEur,pricePerUnit:costEur/amt,exchange:'Bitpanda'});
+    }
+  }
+  return out;
+}
+
+function parseRobinhood(text){
+  var lines=text.split('\n');var hi=-1;
+  for(var i=0;i<lines.length;i++){if(lines[i].toLowerCase().includes('date')){hi=i;break}}
+  if(hi===-1)throw new Error('Header nicht gefunden');
+  var headers=parseCSVLine(lines[hi]).map(function(h){return h.replace(/"/g,'').trim().toLowerCase()});
+  var out=[];
+  for(var i=hi+1;i<lines.length;i++){
+    var line=lines[i].trim();if(!line)continue;
+    var c=parseCSVLine(line);
+    var get=function(k){var ix=headers.indexOf(k);return ix>=0?(c[ix]||'').replace(/"/g,'').trim():''};
+    var type=(get('trans code')||get('type')||'').toLowerCase();
+    if(!type.includes('buy')&&type!=='b')continue;
+    var date=new Date(get('activity date')||get('date'));
+    if(isNaN(date.getTime()))continue;
+    var sym=get('symbol')||get('instrument');
+    var qty=parseFloat(get('quantity')||get('qty')||'0')||0;
+    var price=parseFloat((get('price')||'').replace(/[$,]/g,''))||0;
+    var total=parseFloat((get('amount')||'').replace(/[$,]/g,''))||qty*price;
+    if(!sym||qty<=0)continue;
+    out.push({id:'rh_'+date.getTime()+'_'+sym,date:date,coin:sym,amount:qty,costEur:total/1.08,pricePerUnit:(total/qty)/1.08,exchange:'Robinhood'});
+  }
+  return out;
+}
+
+function parseCoinbase(text){
+  var lines=text.split('\n');var hi=-1;
+  for(var i=0;i<lines.length;i++){if(lines[i].toLowerCase().includes('timestamp')&&lines[i].toLowerCase().includes('transaction type')){hi=i;break}}
+  if(hi===-1)throw new Error('Header nicht gefunden');
+  var headers=parseCSVLine(lines[hi]).map(function(h){return h.replace(/"/g,'').trim().toLowerCase()});
+  var out=[];
+  for(var i=hi+1;i<lines.length;i++){
+    var line=lines[i].trim();if(!line)continue;
+    var c=parseCSVLine(line);
+    var get=function(k){var ix=headers.indexOf(k);return ix>=0?(c[ix]||'').replace(/"/g,'').trim():''};
+    var type=get('transaction type').toLowerCase();
+    if(!type.includes('buy'))continue;
+    var date=new Date(get('timestamp')||get('date'));
+    if(isNaN(date.getTime()))continue;
+    var asset=get('asset');
+    var qty=parseFloat(get('quantity transacted')||'0')||0;
+    var total=parseFloat((get('total (inclusive of fees and/or spread)')||get('total')||'0').replace(/[$,€]/g,''))||0;
+    if(!asset||qty<=0)continue;
+    out.push({id:'cb_'+date.getTime()+'_'+asset,date:date,coin:asset,amount:qty,costEur:total/1.08,pricePerUnit:(total/qty)/1.08,exchange:'Coinbase'});
+  }
+  return out;
+}
+
+// ── LOT STATUS ──
+function getStatus(lot){
+  var held=daysBetween(lot.date,TODAY);
+  var left=365-held;
+  if(held>=365)return{s:'free',label:'✅ STEUERFREI',held:held,left:0,pct:100};
+  if(left<=90)return{s:'soon',label:'⏳ '+left+' TAGE',held:held,left:left,pct:Math.round(held/365*100)};
+  return{s:'taxed',label:'⚠️ '+left+' TAGE',held:held,left:left,pct:Math.round(held/365*100)};
+}
+function getFreeDate(lot){var d=new Date(lot.date);d.setFullYear(d.getFullYear()+1);return d}
+function getCurVal(lot){var p=prices[lot.coin];return p?lot.amount*p:null}
+function getPnL(lot){var cv=getCurVal(lot);return cv!==null?cv-lot.costEur:null}
+
+// ── HEADER ──
+function updateHeader(){
+  document.getElementById('hdr-count').textContent=lots.length+' Lots';
+  document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('de-DE');
+}
+
+// ── DASHBOARD ──
+function renderDashboard(){
+  var has=lots.length>0;
+  document.getElementById('dash-empty').style.display=has?'none':'block';
+  document.getElementById('dash-content').style.display=has?'block':'none';
+  if(!has)return;
+  var tc=0,tv=0,tck=0,freeLots=0,freeVal=0,soonLots=0,taxG=0;
+  lots.forEach(function(lot){
+    tc+=lot.costEur;
+    var cv=getCurVal(lot);var st=getStatus(lot);
+    if(cv!==null){tv+=cv;tck+=lot.costEur;if(st.s==='taxed'&&cv>lot.costEur)taxG+=cv-lot.costEur}
+    if(st.s==='free'){freeLots++;if(cv)freeVal+=cv}
+    if(st.s==='soon')soonLots++;
+  });
+  var pnl=tv-tck;var pct=tck>0?pnl/tck*100:0;
+  document.getElementById('d-val').textContent=tv>0?fmtE(tv):'— €';
+  var chip=document.getElementById('d-pnl');
+  if(tv>0&&pnl!==0){chip.textContent=(pnl>0?'+':'')+fmtE(pnl)+' ('+(pct>0?'+':'')+fmt(pct)+'%)';chip.className='pnl-chip '+(pnl>=0?'chip-pos':'chip-neg')}
+  else{chip.textContent='Kurse eingeben';chip.className='pnl-chip chip-neu'}
+  document.getElementById('d-inv').textContent=fmtE(tc);
+  document.getElementById('d-free').textContent=freeVal>0?fmtE(freeVal):freeLots+' Lots';
+  document.getElementById('d-free-s').textContent=freeLots+' Lots steuerfrei';
+  document.getElementById('d-tax').textContent=taxG>0?fmtE(taxG):'0 €';
+  document.getElementById('d-soon-s').textContent=soonLots+' bald frei';
+  renderPrices();renderCoins();
+  var up=lots.filter(function(l){return getStatus(l).s==='soon'}).sort(function(a,b){return getFreeDate(a)-getFreeDate(b)});
+  var al=document.getElementById('d-alert');
+  if(up.length>0){var fd=getFreeDate(up[0]);al.textContent='⏳ Nächstes steuerfreies Lot: '+up[0].coin+' am '+fd.toLocaleDateString('de-DE')+' (in '+daysBetween(TODAY,fd)+' Tagen)';al.style.display='block'}
+  else al.style.display='none';
+}
+
+// ── PRICES ──
+function renderPrices(){
+  var coins=[...new Set(lots.map(function(l){return l.coin}))].sort();
+  var el=document.getElementById('price-inputs');el.innerHTML='';
+  coins.forEach(function(coin){
+    var row=document.createElement('div');row.className='price-row';
+    row.innerHTML='<div class="pr-coin">'+coin+'</div><div class="pr-wrap"><label>KURS IN EUR</label><input class="pr-inp" id="price-'+coin+'" type="number" placeholder="0.00" value="'+(prices[coin]||'')+'" step="any"></div>';
+    el.appendChild(row);
+  });
+}
+
+var COIN_IDS={BTC:'bitcoin',ETH:'ethereum',SOL:'solana',BNB:'binancecoin',ADA:'cardano',DOT:'polkadot',AVAX:'avalanche-2',MATIC:'matic-network',LINK:'chainlink',XRP:'ripple',LTC:'litecoin',DOGE:'dogecoin',SHIB:'shiba-inu',KAS:'kaspa',RENDER:'render-token',TON:'the-open-network',NEAR:'near',ARB:'arbitrum',OP:'optimism',ASTER:'astar'};
+
+document.getElementById('btn-live').addEventListener('click',function(){
+  var btn=this;var st=document.getElementById('price-status');
+  var coins=[...new Set(lots.map(function(l){return l.coin}))];
+  var ids=coins.map(function(c){return COIN_IDS[c]}).filter(Boolean);
+  if(!ids.length){st.textContent='⚠️ Keine bekannten Coins';st.style.display='block';return}
+  btn.textContent='⏳ Lade...';btn.disabled=true;
+  st.textContent='📡 Verbinde mit CoinGecko...';st.style.display='block';
+  st.className='alert a-blue';
+  fetch('https://api.coingecko.com/api/v3/simple/price?ids='+ids.join(',')+'&vs_currencies=eur')
+    .then(function(r){return r.json()})
+    .then(function(data){
+      var updated=0;
+      coins.forEach(function(coin){
+        var id=COIN_IDS[coin];
+        if(id&&data[id]&&data[id].eur){prices[coin]=data[id].eur;var inp=document.getElementById('price-'+coin);if(inp)inp.value=data[id].eur;updated++}
+      });
+      save();renderDashboard();
+      st.className='alert a-green';st.textContent='✅ '+updated+' Kurse aktualisiert · '+new Date().toLocaleTimeString('de-DE');
+    })
+    .catch(function(err){st.className='alert a-warn';st.textContent='⚠️ Fehler: '+err.message})
+    .finally(function(){btn.textContent='⚡ Live Kurse laden';btn.disabled=false});
+});
+
+document.getElementById('btn-manual').addEventListener('click',function(){
+  var coins=[...new Set(lots.map(function(l){return l.coin}))];
+  coins.forEach(function(c){var inp=document.getElementById('price-'+c);if(inp&&inp.value)prices[c]=parseFloat(inp.value)});
+  save();renderDashboard();
+});
+
+function renderCoins(){
+  var coins=[...new Set(lots.map(function(l){return l.coin}))].sort();
+  var el=document.getElementById('coin-summary');el.innerHTML='';
+  coins.forEach(function(coin){
+    var cl=lots.filter(function(l){return l.coin===coin});
+    var ta=cl.reduce(function(s,l){return s+l.amount},0);
+    var tc=cl.reduce(function(s,l){return s+l.costEur},0);
+    var cv=prices[coin]?ta*prices[coin]:null;
+    var pnl=cv!==null?cv-tc:null;
+    var pct=pnl!==null&&tc>0?pnl/tc*100:null;
+    var dec=coin==='BTC'?6:3;
+    var row=document.createElement('div');row.className='coin-row';
+    row.innerHTML='<div class="cr-l"><div class="cr-name">'+coin+'</div><div class="cr-info">'+cl.length+' Lots · '+fmt(ta,dec)+'</div></div><div class="cr-r"><div class="cr-val">'+(cv!==null?fmtE(cv):fmtE(tc))+'</div><div class="cr-pnl '+(pnl===null?'':pnl>=0?'g':'r')+'">'+(pnl!==null?(pnl>=0?'+':'')+fmtE(pnl)+' ('+(pct>=0?'+':'')+fmt(pct)+'%)':'Kurs eingeben')+'</div></div>';
+    el.appendChild(row);
+  });
+}
+
+// ── LOTS ──
+function renderLots(){
+  var has=lots.length>0;
+  document.getElementById('lots-empty').style.display=has?'none':'block';
+  document.getElementById('lots-content').style.display=has?'block':'none';
+  if(!has)return;
+  var coins=['ALLE'].concat([...new Set(lots.map(function(l){return l.coin}))]);
+  var fEl=document.getElementById('coin-filter');fEl.innerHTML='';
+  coins.forEach(function(c){
+    var b=document.createElement('div');b.className='fp'+(c===filterCoin?' on':'');b.textContent=c;
+    b.addEventListener('click',function(){filterCoin=c;renderLots()});fEl.appendChild(b);
+  });
+  var filtered=filterCoin==='ALLE'?lots:lots.filter(function(l){return l.coin===filterCoin});
+  var sorted=filtered.slice().sort(function(a,b){var o={taxed:0,soon:1,free:2};var sa=getStatus(a).s,sb=getStatus(b).s;return o[sa]!==o[sb]?o[sa]-o[sb]:a.date-b.date});
+  var el=document.getElementById('lots-list');el.innerHTML='';
+  sorted.forEach(function(lot){
+    var st=getStatus(lot);var cv=getCurVal(lot);var pnl=getPnL(lot);var pct=pnl!==null&&lot.costEur>0?pnl/lot.costEur*100:null;
+    var fd=getFreeDate(lot);var dec=lot.coin==='BTC'?8:6;
+    var d=document.createElement('div');d.className='lot '+st.s;
+    d.innerHTML='<div class="lot-top"><div><div class="lot-coin">'+lot.coin+'</div><div class="lot-src">'+lot.exchange+' · '+lot.date.toLocaleDateString('de-DE')+'</div></div><div class="badge '+st.s+'">'+st.label+'</div></div><div class="lot-grid"><div class="lot-f"><label>MENGE</label><span>'+fmt(lot.amount,dec)+'</span></div><div class="lot-f"><label>EINSTAND</label><span>'+fmtE(lot.costEur)+'</span></div><div class="lot-f"><label>AKTUELL</label><span>'+(cv!==null?fmtE(cv):'—')+'</span></div><div class="lot-f"><label>EK-KURS</label><span>'+fmtE(lot.pricePerUnit)+'</span></div><div class="lot-f"><label>G/V</label><span class="'+(pnl===null?'':pnl>=0?'g':'r')+'">'+(pnl!==null?(pnl>=0?'+':'')+fmtE(pnl):'—')+'</span></div><div class="lot-f"><label>'+(st.s==='free'?'FREI SEIT':'FREI AM')+'</label><span class="'+(st.s==='free'?'g':st.s==='soon'?'w':'')+'">'+fd.toLocaleDateString('de-DE')+'</span></div></div><div class="prog"><div class="prog-fill pf-'+st.s+'" style="width:'+st.pct+'%"></div></div><div class="prog-lbl"><span>'+st.held+' / 365 Tage</span><span>'+st.pct+'%</span></div>';
+    el.appendChild(d);
+  });
+}
+
+// ── TIMELINE ──
+function renderTimeline(){
+  var has=lots.length>0;
+  document.getElementById('tl-empty').style.display=has?'none':'block';
+  document.getElementById('tl-content').style.display=has?'block':'none';
+  if(!has)return;
+  var up=lots.filter(function(l){return getStatus(l).s!=='free'}).sort(function(a,b){return getFreeDate(a)-getFreeDate(b)}).slice(0,20);
+  var fr=lots.filter(function(l){return getStatus(l).s==='free'}).sort(function(a,b){return b.date-a.date}).slice(0,20);
+  function renderTL(items,el){
+    el.innerHTML='';
+    if(!items.length){el.innerHTML='<div style="color:var(--text3);font-size:12px;padding:8px 0">Keine Einträge</div>';return}
+    items.forEach(function(lot){
+      var st=getStatus(lot);var fd=getFreeDate(lot);var cv=getCurVal(lot);var dec=lot.coin==='BTC'?8:5;
+      var dc=st.s==='free'?'dot-g':st.s==='soon'?'dot-w':'dot-r';
+      var d=document.createElement('div');d.className='tl-item';
+      d.innerHTML='<div class="tl-dot '+dc+'"></div><div class="tl-info"><div class="tl-name">'+lot.coin+' · '+fmt(lot.amount,dec)+'</div><div class="tl-date">'+(st.s==='free'?'Frei seit ':'Frei am ')+fd.toLocaleDateString('de-DE')+(st.s!=='free'?' · noch '+daysBetween(TODAY,fd)+' Tage':'')+'</div></div><div class="tl-amt '+(cv?(cv>lot.costEur?'g':'r'):'')+'">'+(cv?fmtE(cv):fmtE(lot.costEur))+'</div>';
+      el.appendChild(d);
+    });
+  }
+  renderTL(up,document.getElementById('tl-upcoming'));
+  renderTL(fr,document.getElementById('tl-free'));
+}
+
+// ── EXPORT ──
+function buildCSV(){
+  var h='Coin,Kaufdatum,Menge,Einstand EUR,EK-Kurs EUR,Steuerfrei ab,Tage gehalten,Status,Aktueller Wert EUR,Gewinn/Verlust EUR,Börse';
+  var rows=lots.map(function(lot){
+    var st=getStatus(lot);var fd=getFreeDate(lot);var cv=getCurVal(lot);var pnl=getPnL(lot);var dec=lot.coin==='BTC'?8:6;
+    return[lot.coin,lot.date.toLocaleDateString('de-DE'),fmt(lot.amount,dec),fmt(lot.costEur),fmt(lot.pricePerUnit),fd.toLocaleDateString('de-DE'),st.held,st.s==='free'?'Steuerfrei':st.s==='soon'?'Bald frei':'Steuerpflichtig',cv!==null?fmt(cv):'',pnl!==null?fmt(pnl):'',lot.exchange].join(',');
+  });
+  return[h].concat(rows).join('\n');
+}
+
+function renderExport(){
+  var has=lots.length>0;
+  document.getElementById('exp-empty').style.display=has?'none':'block';
+  document.getElementById('exp-content').style.display=has?'block':'none';
+  if(!has)return;
+  document.getElementById('exp-pre').textContent=buildCSV().split('\n').slice(0,12).join('\n')+'\n...';
+}
+
+document.getElementById('btn-dl').addEventListener('click',function(){
+  var blob=new Blob([buildCSV()],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='krypto_steuer_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(url);
+});
+
+document.getElementById('btn-copy').addEventListener('click',function(){
+  var btn=this;
+  navigator.clipboard.writeText(buildCSV()).then(function(){var o=btn.textContent;btn.textContent='✅ Kopiert!';setTimeout(function(){btn.textContent=o},2000)});
+});
+
+document.getElementById('btn-clear').addEventListener('click',function(){
+  if(confirm('Alle Daten löschen?')){lots=[];prices={};localStorage.removeItem('kst_lots');localStorage.removeItem('kst_prices');updateHeader();document.getElementById('imp-ok').style.display='none'}
+});
+
+// ── INIT ──
+initLock();
+</script>
+</body>
+</html>
